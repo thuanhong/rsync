@@ -1,35 +1,40 @@
+#!/usr/bin/env python3
+
 import os
 import argparse
 
 
-def regularWrite(source, destination, update = False, check = False):
-    f_source = os.open(source, os.O_RDONLY)
-    f_destination = os.open(destination, os.O_CREAT | os.O_WRONLY)
-    content = os.read(f_source, f_source_stat.st_size)
-    os.write(f_destination, content)
-    os.close(f_source)
-    os.close(f_destination)
-    set_default(source, destination)
+def regularWrite(src, dest):
+    if os.path.islink(src):
+        os.symlink(os.readlink(src), dest)
+    #  open source file and destination file
+    f_src = os.open(src, os.O_RDONLY)
+    if os.path.isdir(args.dest):
+        dest  = dest + '/' + src
+    f_dest = os.open(dest, os.O_CREAT | os.O_WRONLY)
+
+    f_src_stat = os.stat(src)
+    content = os.read(f_src, f_src_stat.st_size)
+    os.write(f_dest, content)
+    os.close(f_src)
+    os.close(f_dest)
+    #  set default time and permission
+    os.utime(dest, (f_src_stat.st_atime, f_src_stat.st_mtime))
+    os.chmod(dest, f_src_stat.st_mode)
+    #  set default symlink and hardlink
 
 
-
-def set_default(source, destination):
-    f_source_stat = os.stat(source)
-    os.utime(destination, (f_source_stat.st_atime, f_source_stat.st_mtime))
-    os.chmod(destination, f_source_stat.st_mode)
 
 if __name__ == '__main__':
 
     parser = argparse.ArgumentParser()
     parser.add_argument("-c", "--checksum", help = "skip based on checksum, not mod-time & size", action="store_true")
     parser.add_argument("-u", "--update", help = 'skip files that are newer on the receiver', action="store_true")
-    parser.add_argument("source", help = "file source")
-    parser.add_argument("destination", help = 'file destination')
+    parser.add_argument("src", help = "file src")
+    parser.add_argument("dest", help = 'file dest')
     args = parser.parse_args()
 
-    if args.update:
-        main(args.source, args.destination, update = True)
-    elif args.checksum:
-        main(args.source, args.destination, check = True)
+    if os.path.isfile(args.src):
+        regularWrite(args.src, args.dest)
     else:
-        main(args.source, args.destination)
+        print('skipping directory new')
