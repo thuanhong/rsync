@@ -1,0 +1,216 @@
+
+  1) rsync core  should copy a file to a new place `rsync file1 dir`
+
+       expected: ""
+            got: "Traceback (most recent call last):\n  File \"rsync.py\", line 73, in <module>\n    regularWrite(elem...n, os.O_CREAT | os.O_WRONLY)\nIsADirectoryError: [Errno 21] Is a directory: 'dbxofyzykywnnloaqfs'\n"
+
+       (compared using ==)
+
+       Diff:
+       @@ -1 +1,7 @@
+       +Traceback (most recent call last):
+       +  File "rsync.py", line 73, in <module>
+       +    regularWrite(element, args.destination)
+       +  File "rsync.py", line 29, in regularWrite
+       +    f_destination = os.open(destination, os.O_CREAT | os.O_WRONLY)
+       +IsADirectoryError: [Errno 21] Is a directory: 'dbxofyzykywnnloaqfs'
+
+  2) rsync core  should copy a file to a new place `rsync dir1/file1 dir2`
+
+       expected: ""
+            got: "Traceback (most recent call last):\n  File \"rsync.py\", line 73, in <module>\n    regularWrite(elem..., os.O_CREAT | os.O_WRONLY)\nIsADirectoryError: [Errno 21] Is a directory: 'yobrzzwahnvpcjwpfamc'\n"
+
+       (compared using ==)
+
+       Diff:
+       @@ -1 +1,7 @@
+       +Traceback (most recent call last):
+       +  File "rsync.py", line 73, in <module>
+       +    regularWrite(element, args.destination)
+       +  File "rsync.py", line 29, in regularWrite
+       +    f_destination = os.open(destination, os.O_CREAT | os.O_WRONLY)
+       +IsADirectoryError: [Errno 21] Is a directory: 'yobrzzwahnvpcjwpfamc'
+
+  3) rsync core  should work with the 2 different files `rsync file1 dir/file2`
+
+       expected: "ptfuvswhbuqfjsqxx\nlhtrgaonbayukkdulse\nknizuhpcnmvpieoqlqvf\ncbjepfworbaevolacxe\nvpdutupeeyadhadkfscj\niedtrzebrhhowaocu\ncsgzzciqdzeboxzio"
+            got: "lxlwjvojdxaayiahelvg\nlhyxkwhkvqpmzshk\nzesvfpvsbwhgwtrb\nthjrburqmiysbhnjcfe\nyzarhxmqqryogvqia\nro...dshrhsnduesnpkb\nmobgzaenkgsoyoefchlf\nksublhadyheqhhno\ntxhutwbvglttvqmhfwfb\ngbfqrroynhwxdzldutyg"
+
+       (compared using ==)
+
+       Diff:
+       @@ -1,8 +1,30 @@
+       -ptfuvswhbuqfjsqxx
+       -lhtrgaonbayukkdulse
+       -knizuhpcnmvpieoqlqvf
+       -cbjepfworbaevolacxe
+       -vpdutupeeyadhadkfscj
+       -iedtrzebrhhowaocu
+       -csgzzciqdzeboxzio
+       +lxlwjvojdxaayiahelvg
+       +lhyxkwhkvqpmzshk
+       +zesvfpvsbwhgwtrb
+       +thjrburqmiysbhnjcfe
+       +yzarhxmqqryogvqia
+       +rokzkaloypzhzaabk
+       +pvjzxriwviyxfuylkpit
+       +omksyqzhrjcgpeyjo
+       +nfzvshaadrcwskroiqy
+       +jkaigdqpohemgtzudlb
+       +xlhvnubxahhsnihbg
+       +zorisbntouonkqvicoox
+       +awkjkhiuvphglxgvewu
+       +bzorlfrprsrqsbqjldez
+       +swnmcvehffgpimtgmm
+       +dujhcokxdscofgnriejp
+       +rckzkyamqjqmzmcbd
+       +dwthnckttxyibgnoe
+       +vsreefwngrrcscsnb
+       +moeodiqqfijhuicdvklt
+       +xksnqflbnmtyyudzot
+       +uumticfdgakjdnkxvxum
+       +qnwkzmoydwvehmlfqc
+       +essfkhgqexacivmj
+       +bvdshrhsnduesnpkb
+       +mobgzaenkgsoyoefchlf
+       +ksublhadyheqhhno
+       +txhutwbvglttvqmhfwfb
+       +gbfqrroynhwxdzldutyg
+
+  4) rsync core  should copy a link to a new place `rsync hardlink new_name`
+
+       expected: ""
+            got: "Traceback (most recent call last):\n  File \"rsync.py\", line 71, in <module>\n    os.link(element, ...2] No such file or directory: 'vwyikgyxhxdkzqnpblr' -> 'wlxkxwhjqajkmgyphqku/vwyikgyxhxdkzqnpblr'\n"
+
+       (compared using ==)
+
+       Diff:
+       @@ -1 +1,5 @@
+       +Traceback (most recent call last):
+       +  File "rsync.py", line 71, in <module>
+       +    os.link(element, args.destination + '/' + element)
+       +FileNotFoundError: [Errno 2] No such file or directory: 'vwyikgyxhxdkzqnpblr' -> 'wlxkxwhjqajkmgyphqku/vwyikgyxhxdkzqnpblr'
+
+  5) rsync core  should change the content if the file is newer `rsync file1 file2`
+
+       expected: "gmabhdaafehaiijcgagahbbbbhgdkjlfdgiebhiakhdggjeefcekbhjmcilfebigdcjhmelmgjablmcdhhbcildagckafefmjeic"
+            got: "nvnzvwtxxuotyvvpuoqswxwztxvyyuvpuruouryqpstvonqypwputrrpzupnxqwnnnqpwrzsozxruttvoqnurowtvvtuxrotxwto"
+
+       (compared using ==)
+
+  6) rsync core  should change the chmod for the 2 different files `rsync file1 dir/file2`
+
+       expected: "gxjstpehoonfhqumr\ntedcawvjwngbibzjabi\nhaqrtdqnuuwqrtpfen\nflienxcaadqyswvsnf\nxmgmgqpubedieuuibae\...moanmpbjtbwzyacejz\nfmromvrocqtwvywicv\nskuutdebqvoytgxklg\nbgrcjrmwzgcztmufzntw\nmvwzhzupxtfundawj"
+            got: "qlhwefomiuproqjlueei\ngoquyntpfovfwawecd\ndksjzsooskicvavzy\nnkftqtuvnfjswzmjyho\nmhmxjovtnjwybhcvx\...a\nnhuawtmeqqtxhqyuk\nofebtginnkdrkubgyp\nyygfmzjbywjfltmoxg\nklkhgwdoniidksnt\nvigmaaetexwsbiibevr"
+
+       (compared using ==)
+
+       Diff:
+       @@ -1,11 +1,13 @@
+       -gxjstpehoonfhqumr
+       -tedcawvjwngbibzjabi
+       -haqrtdqnuuwqrtpfen
+       -flienxcaadqyswvsnf
+       -xmgmgqpubedieuuibae
+       -bqmoanmpbjtbwzyacejz
+       -fmromvrocqtwvywicv
+       -skuutdebqvoytgxklg
+       -bgrcjrmwzgcztmufzntw
+       -mvwzhzupxtfundawj
+       +qlhwefomiuproqjlueei
+       +goquyntpfovfwawecd
+       +dksjzsooskicvavzy
+       +nkftqtuvnfjswzmjyho
+       +mhmxjovtnjwybhcvx
+       +gyzjdvmsmtijhsuwkv
+       +xeynocjxvxziokoapma
+       +nhuawtmeqqtxhqyuk
+       +ofebtginnkdrkubgyp
+       +yygfmzjbywjfltmoxg
+       +klkhgwdoniidksnt
+       +vigmaaetexwsbiibevr
+
+  7) rsync core  should change the mtime for the 2 different files `rsync file1 dir/file2`
+
+       expected: "bbrdposszsxuggeorws\nfhbfkxleiginkmqb\noarbkyclnmrktdyt\nvpjxpwwxxitepfhpodzd\nwxplsyswnyotxbtk\nxxf...etb\njqqougatqrvorldsjq\nsusfjkbfmtjnyjdst\nombtjtfzgscoywej\nykxvanarzfssnxpkz\nukqohrlstxqdkupzoq"
+            got: "gaivwnhjqauzvtpznz\nlgupgqllddyymtfvg\nqxoatiatslpjpijy\nmrcrbhyjyguhcdarln\nubzpecpoptbpvuhod\nwzfq...nazjqrefxahomcxuz\njcpbhufkokjmaiofdiz\nqgyuthiwudbjzlsyvv\nxlfkfpataldfnpakfjo\nqkqtpljgbpmvezdtsh"
+
+       (compared using ==)
+
+       Diff:
+       @@ -1,23 +1,19 @@
+       -bbrdposszsxuggeorws
+       -fhbfkxleiginkmqb
+       -oarbkyclnmrktdyt
+       -vpjxpwwxxitepfhpodzd
+       -wxplsyswnyotxbtk
+       -xxfkbmocvblnjurk
+       -dzrasfcabdvhebfrwvxx
+       -plbxltdjyjcfalydrb
+       -goedksobhywppygkrws
+       -ecyrbqxecyppfzngva
+       -hzbuxzdnueddbdwj
+       -gngcfajofxgtivbzy
+       -lhwbhvciykcpcfmb
+       -horcrhbohmnqmluo
+       -hqngmneqpbkzobvk
+       -jfkusqdveuwnlgrsdd
+       -zoadwictwnsnyzumwetb
+       -jqqougatqrvorldsjq
+       -susfjkbfmtjnyjdst
+       -ombtjtfzgscoywej
+       -ykxvanarzfssnxpkz
+       -ukqohrlstxqdkupzoq
+       +gaivwnhjqauzvtpznz
+       +lgupgqllddyymtfvg
+       +qxoatiatslpjpijy
+       +mrcrbhyjyguhcdarln
+       +ubzpecpoptbpvuhod
+       +wzfqvvxzrtkzvxptao
+       +mpfahhdodjosmrnk
+       +cyodxruiegffmigtm
+       +joggtjuaeapeftygvug
+       +zefnartqfogittrocci
+       +dwtitdvrhzgjrcahf
+       +rfwyszmjiwqwipon
+       +kuvoyaezlpfhlptiadi
+       +wnazjqrefxahomcxuz
+       +jcpbhufkokjmaiofdiz
+       +qgyuthiwudbjzlsyvv
+       +xlfkfpataldfnpakfjo
+       +qkqtpljgbpmvezdtsh
+
+  8) rsync core  should not rewrite everything for a small change `rsync file1 dir/file2`
+
+       expected: "bekahcdbgjhamkmfblhgmahikiagbcebglachfifbadjfalgagmhfljaglihkcehigfagafcmgficdikdmeeldihfjejgfggmcfk"
+            got: "bekahcdbgjhamkmfblhgmahikiagbcebglachfifbadjfalgagmhfljaglihkcehigfagafcmgficdikdmeeldihfjejgfggmcfx"
+
+       (compared using ==)
+
+  9) rsync core  should not rewrite everything for a small change `rsync file1 dir/file2`
+
+       expected: "bijeikaggljfljglllcbcfdlealiahhaeabjiegbfdelmgbmadmkklabgbefaleedfgmcaahhghkkhhkddacbdhdldeeaefeemll"
+            got: "bijeikaggljfljglllcbcfdlealiahhaeabjiegbfdelmgbmadmkklabgbefaleedfgmcaahhghkkhhkddacbdhdldeeaefeeml"
+
+       (compared using ==)
+
+  10) rsync core  should not rewrite everything for a small change `rsync file1 dir/file2`
+
+        expected: "fddahlbhgahdiffbjjhbljdiabldjmfaikjbddkclfdglaeddkikkcdbgjcagbdfigafdimbjiklgebfekljibbjjegkmdiljfkl"
+             got: "fddahlbhgahdiffbjjhbljdiabldjmfaikjbddkclfdglaeddkikkcdbgjcagbdfigafdimxjiklgebfekljibbjjegkmdiljfkl"
+
+        (compared using ==)
+
+  11) rsync core  should generate an error if the src file doesn't exist `rsync file1 file2`
+
+        expected: "rsync: link_stat \"/app/rendu/ieegnlnehzodcobyw\" failed: No such file or directory (2)"
+             got: "rsync: link_stat \"/app/rendu/ieegnlnehzodcobyw\" failed: No such file or directory(2)"
+
+        (compared using ==)
+
+  12) rsync core  should generate an error if the src file doesn't have the read right `rsync file1 file2`
+
+        expected: "rsync: send_files failed to open \"/app/rendu/ctvdhprstpjmwuajcbr\": Permission denied (13)"
+             got: "rsync: send_files failed to open /app/rendu/ctvdhprstpjmwuajcbr: Permission denied (13)"
+
+        (compared using ==)
