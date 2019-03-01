@@ -39,7 +39,18 @@ def regularWrite(source, destination):
     os.close(f_source)
 
 def update_content(source, destination):
-    pass
+    content_list = []
+    fd_source = os.open(source_path, os.O_RDONLY)
+    fd_dest = os.open(dest_path, os.O_RDWR)
+    source_content = os.read(fd_source, source_size)
+    dest_content = os.read(fd_dest, dest_size)
+    content_list.append(source_content)
+    content_list.append(dest_content)
+    cp = common_prefix(content_list)
+    os.lseek(fd_dest, len(cp), 0)
+    os.write(fd_dest, source_content[len(cp):])
+    os.close(fd_dest)
+    os.close(fd_source)
 
 
 def set_default(source, destination):
@@ -97,7 +108,7 @@ if __name__ == '__main__':
                 regularWrite(element, args.destination)
                 set_default(element, args.destination)
         elif not check_size(element, args.destination) or not check_time(element, args.destination):
-            if os.path.exists(element):
+            if os.path.exists(args.destination):
                 update_content(element, args.destination)
             else:
                 regularWrite(element, args.destination)
