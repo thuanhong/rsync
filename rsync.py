@@ -31,12 +31,18 @@ def check_update(src, dest):
 
 
 def regularWrite(source, destination):
+    content_list = []
     f_source = os.open(source, os.O_RDONLY)
-    f_destination = os.open(destination, os.O_CREAT | os.O_WRONLY)
-    content = os.read(f_source, os.stat(source).st_size)
-    os.write(f_destination, content)
+    f_dest = os.open(destination,os.O_CREAT | os.O_RDWR)
+    source_content = os.read(f_source, os.stat(source).st_size)
+    dest_content = os.read(f_dest, os.stat(destination).st_size)
+    content_list.append(source_content)
+    content_list.append(dest_content)
+    cs = os.path.commonprefix(content_list)
+    os.lseek(f_dest, len(cs), 0)
+    os.write(f_dest, source_content)
+    os.close(f_dest)
     os.close(f_source)
-    os.close(f_destination)
 
 
 def set_default(source, destination):
@@ -63,6 +69,9 @@ if __name__ == '__main__':
         if not os.path.exists(element):
              print('rsync: link_stat "' + os.path.abspath(element) + '" failed: No such file or directory (2)')
              break
+        elif os.path.isdir(element) and not args.recursive:
+            print('skipping directory dir')
+            break
         elif not os.access(element, os.R_OK):
             print('rsync: send_files failed to open "' + os.path.abspath(element) + '": Permission denied (13)')
             break
@@ -72,16 +81,22 @@ if __name__ == '__main__':
                 os.unlink(args.destination)
 
             if check_symlink(element):
-                os.symlink(os.readlink(element), args.destination)
+                if os.path.isdir(args.destination):
+                    os.symlink(os.readlink(element), args.destination + '/' + element.split('/')[-1])
+                else:
+                    os.symlink(os.readlink(element), args.destination)
             else:
-                os.link(element, args.destination)
+                if os.path.isdir(args.destination):
+                    os.link(element, args.destination + '/' + element.split('/')[-1])
+                else:
+                    os.link(element, args.destination)
 
         elif os.path.isdir(args.destination):
             regularWrite(element, args.destination + '/' + element.split('/')[-1])
             set_default(element, args.destination + '/' + element.split('/')[-1])
 
         elif args.update:
-            if not check_time(element, args.destination):
+            if not check_update(element, args.destination):
                 regularWrite(element, args.destination)
                 set_default(element, args.destination)
         else:
