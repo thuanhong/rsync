@@ -3,20 +3,26 @@
 import os
 import argparse
 
+
 def check_exist(dest):
     return os.path.exists(dest)
+
 
 def check_size(src, dest):
     return os.stat(src).st_size == os.stat(src).st_size
 
+
 def check_time(src, dest):
     return os.stat(src).st_mtime == os.stat(dest).st_mtime
+
 
 def check_hardlink(src):
     return os.stat(src).st_nlink > 1
 
+
 def check_symlink(src):
     return os.path.islink(src)
+
 
 def check_update(src, dest):
     time_src = os.stat(src).st_mtime
@@ -55,10 +61,10 @@ if __name__ == '__main__':
     for element in args.source:
         #  check sym link and hard link
         if not os.path.exists(element):
-             print('rsync: link_stat "' + os.path.abspath(element) + '" failed: No such file or directory(2)')
+             print('rsync: link_stat "' + os.path.abspath(element) + '" failed: No such file or directory (2)')
              break
         elif not os.access(element, os.R_OK):
-            print('rsync: send_files failed to open ' + os.path.abspath(element) + ': Permission denied (13)')
+            print('rsync: send_files failed to open "' + os.path.abspath(element) + '": Permission denied (13)')
             break
         elif check_symlink(element) or check_hardlink(element):
             #  delete file if it have exist
@@ -68,14 +74,16 @@ if __name__ == '__main__':
             if check_symlink(element):
                 os.symlink(os.readlink(element), args.destination)
             else:
-                os.link(element, args.destination + '/' + element)
+                os.link(element, args.destination)
+
         elif os.path.isdir(args.destination):
-            regularWrite(element, args.destination)
-            set_default(element, args.destination)
-        elif check_exist(args.destination):
-            if (check_time(element, args.destination) and check_size(element, args.destination))\
-                or (args.update and check_update(element, args.destination)):
-                pass
+            regularWrite(element, args.destination + '/' + element.split('/')[-1])
+            set_default(element, args.destination + '/' + element.split('/')[-1])
+
+        elif args.update:
+            if not check_time(element, args.destination):
+                regularWrite(element, args.destination)
+                set_default(element, args.destination)
         else:
             regularWrite(element, args.destination)
             set_default(element, args.destination)
