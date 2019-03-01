@@ -9,7 +9,7 @@ def check_exist(dest):
 
 
 def check_size(src, dest):
-    return os.stat(src).st_size == os.stat(src).st_size
+    return os.path.getsize(src) == os.path.getsize(dest)
 
 
 def check_time(src, dest):
@@ -40,17 +40,17 @@ def regularWrite(source, destination):
 
 def update_content(source, destination):
     content_list = []
-    fd_source = os.open(source_path, os.O_RDONLY)
-    fd_dest = os.open(dest_path, os.O_RDWR)
-    source_content = os.read(fd_source, source_size)
-    dest_content = os.read(fd_dest, dest_size)
+    f_source = os.open(source, os.O_RDONLY)
+    f_dest = os.open(destination, os.O_RDWR)
+    source_content = os.read(f_source, os.path.getsize(source))
+    dest_content = os.read(f_dest, os.path.getsize(destination))
     content_list.append(source_content)
     content_list.append(dest_content)
-    cp = common_prefix(content_list)
-    os.lseek(fd_dest, len(cp), 0)
-    os.write(fd_dest, source_content[len(cp):])
-    os.close(fd_dest)
-    os.close(fd_source)
+    cp = os.path.commonprefix(content_list)
+    os.lseek(f_dest, len(cp), 0)
+    os.write(f_dest, source_content[len(cp):])
+    os.close(f_dest)
+    os.close(f_source)
 
 
 def set_default(source, destination):
@@ -104,12 +104,18 @@ if __name__ == '__main__':
             set_default(element, args.destination + '/' + element.split('/')[-1])
 
         elif args.update:
-            if not check_update(element, args.destination):
+            if check_update(element, args.destination):
                 regularWrite(element, args.destination)
                 set_default(element, args.destination)
-        elif not check_size(element, args.destination) or not check_time(element, args.destination):
-            if os.path.exists(args.destination):
-                update_content(element, args.destination)
-            else:
-                regularWrite(element, args.destination)
+
+        elif os.path.exists(args.destination):
+            if not check_size(element, args.destination) or not check_time(element, args.destination):
+                if os.path.getsize(element) > os.path.getsize(args.destination):
+                    update_content(element, args.destination)
+                else:
+                    os.unlink(args.destination)
+                    regularWrite(element, args.destination)
+                set_default(element, args.destination)
+        else:
+            regularWrite(element, args.destination)
             set_default(element, args.destination)
