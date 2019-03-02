@@ -18,9 +18,9 @@ def check_update(src, dest):
     return time_src < time_dest
 
 
-def check_sum(source, source):
-    md5_src = hashlib.md5(read_src).hexdigest()
-    md5_dst = hashlib.md5(read_dst).hexdigest()
+def check_sum(src, dest):
+    md5_src = hashlib.md5(src).hexdigest()
+    md5_dst = hashlib.md5(dst).hexdigest()
     return md5_src == md5_dst
 
 
@@ -42,6 +42,9 @@ def hardlink(src, dest):
         os.link(src, dest)
 
 
+
+
+
 def regularWrite(source, destination):
     f_source = os.open(source, os.O_RDONLY)
     f_dest = os.open(destination,os.O_CREAT | os.O_WRONLY)
@@ -53,8 +56,8 @@ def regularWrite(source, destination):
 def update_content(source, destination):
     file1 = os.open(source, os.O_RDONLY)
     src_content = os.read(file1, os.path.getsize(source))
-    file2 = os.open(source, os.O_RDWR | os.O_CREAT)
-    dest_content = os.read(file2, os.path.getsize(source))
+    file2 = os.open(destination, os.O_RDWR | os.O_CREAT)
+    dest_content = os.read(file2, os.path.getsize(destination))
     count = 0
     while count < os.path.getsize(source):
         os.lseek(file1, count, 0)
