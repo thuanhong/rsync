@@ -42,16 +42,31 @@ def hardlink(src, dest):
         os.link(src, dest)
 
 
+def handling_error(source):
+    try:
+        f = os.open(source, os.O_RDONLY)
+    except FileNotFoundError:
+        print('rsync: link_stat "' + os.path.abspath(source) +
+              '" failed: No such file or directory (2)')
+        return True
+    except PermissionError:
+        print('rsync: send_files failed to open "' +
+              os.path.abspath(source) + '": Permission denied (13)')
+        return True
+    else:
+        os.close(f)
+        return False
 
 
-
-def regularWrite(source, destination):
+def copy(source, destination):
     f_source = os.open(source, os.O_RDONLY)
-    f_dest = os.open(destination,os.O_CREAT | os.O_WRONLY)
+    f_dest = os.open(destination, os.O_CREAT | os.O_WRONLY)
     source_content = os.read(f_source, os.path.getsize(source))
     os.write(f_dest, source_content)
     os.close(f_dest)
     os.close(f_source)
+    set_default(source, destination)
+
 
 def update_content(source, destination):
     file1 = os.open(source, os.O_RDONLY)
@@ -68,6 +83,9 @@ def update_content(source, destination):
         else:
             os.write(file2, os.read(file1, 1))
         count += 1
+    os.close(f_dest)
+    os.close(f_source)
+    set_default(source, destination)
 
 
 def set_default(source, destination):
@@ -79,55 +97,51 @@ def set_default(source, destination):
 if __name__ == '__main__':
 
     parser = argparse.ArgumentParser()
-    parser.add_argument("-c", "--checksum", help = "skip based on checksum, not mod-time & size", action="store_true")
-    parser.add_argument("-u", "--update", help = 'skip files that are newer on the receiver', action="store_true")
-    parser.add_argument("-r", "--recursive", help = "copy multifile", action="store_true")
-    parser.add_argument("source", nargs="+", help = "file source")
-    parser.add_argument("destination", help = 'file destination')
+    parser.add_argument("-c", "--checksum",
+                        action="store_true",
+                        help="skip based on checksum, not mod-time & size")
+    parser.add_argument("-u", "--update",
+                        action="store_true",
+                        help='skip files that are newer on the receiver')
+    parser.add_argument("-r", "--recursive",
+                        action="store_true",
+                        help="copy multifile")
+    parser.add_argument("source", nargs="+", help="file source")
+    parser.add_argument("destination", help='file destination')
     args = parser.parse_args()
     #  create directory if it not exist
     if args.recursive and not check_exist(args.destination):
         os.mkdir(args.destination)
 
-    for element in args.source:
+    for item in args.source:
         #  check sym link and hard link
-        if not os.path.exists(element):
-             print('rsync: link_stat "' + os.path.abspath(element) + '" failed: No such file or directory (2)')
-             break
-        elif os.path.isdir(element) and not args.recursive:
-            print('skipping directory dir')
+        if handling_error(item):
             break
-        elif not os.access(element, os.R_OK):
-            print('rsync: send_files failed to open "' + os.path.abspath(element) + '": Permission denied (13)')
-            break
-        elif os.stat(element).st_nlink > 1: #  check hard link
-            hardlink(element, args.destination)
 
-        elif os.path.islink(element): #  check sym link
-            symlink(element, args.destination)
+        if os.stat(item).st_nlink > 1:  # check hard link
+            hardlink(item, args.destination)
+
+        elif os.path.islink(item):  # check sym link
+            symlink(item, args.destination)
 
         elif os.path.isdir(args.destination):
-            regularWrite(element, args.destination + '/' + element.split('/')[-1])
-            set_default(element, args.destination + '/' + element.split('/')[-1])
+            copy(item, args.destination + '/' + item.split('/')[-1])
 
         elif args.checksum:
-            if check_sum(element, args.destination):
-                regularWrite(element, args.destination)
-                set_default(element, args.destination)
+            if check_sum(item, args.destination):
+                copy(item, args.destination)
 
         elif args.update:
-            if check_update(element, args.destination):
-                regularWrite(element, args.destination)
-                set_default(element, args.destination)
+            if check_update(item, args.destination):
+                copy(item, args.destination)
 
         elif os.path.exists(args.destination):
-            if not check_size(element, args.destination) or not check_time(element, args.destination):
-                if os.path.getsize(element) >= os.path.getsize(args.destination):
-                    update_content(element, args.destination)
+            if not check_size(item, args.destination) or \
+               not check_time(item, args.destination):
+                if os.path.getsize(item) >= os.path.getsize(args.destination):
+                    update_content(item, args.destination)
                 else:
                     os.unlink(args.destination)
-                    regularWrite(element, args.destination)
-                set_default(element, args.destination)
+                    copy(item, args.destination)
         else:
-            regularWrite(element, args.destination)
-            set_default(element, args.destination)
+            copy(item, args.destination)
