@@ -73,7 +73,11 @@ def copy(source, destination):
     Rewrite content
     '''
     f_source = os.open(source, os.O_RDONLY)
-    f_dest = os.open(destination, os.O_CREAT | os.O_WRONLY)
+    try:
+        f_dest = os.open(destination, os.O_CREAT | os.O_WRONLY)
+    except PermissionError:
+        os.chmod(destination, 0o777)
+        f_dest = os.open(destination, os.O_CREAT | os.O_WRONLY)
     source_content = os.read(f_source, os.path.getsize(source))
     os.write(f_dest, source_content)
     os.close(f_dest)
@@ -137,10 +141,6 @@ def main(item, dest):
     '''
     Handle main
     '''
-    if handling_error(item) or handling_error(dest) or\
-       handling_error(dest + '/' + item.split('/')[-1]):
-        return
-
     if os.stat(item).st_nlink > 1:  # check hard link
         hardlink(item, dest)
 
@@ -207,4 +207,7 @@ if __name__ == '__main__':
         if args.recursive and os.path.isdir(item):
             execute_recursive(item, args.destination)
         else:
+            if os.path.isdir(item):
+                print('skipping directory .')
+                continue
             main(item, args.destination)
