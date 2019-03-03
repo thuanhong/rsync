@@ -2,6 +2,7 @@
 
 import os
 import argparse
+import hashlib
 
 
 def check_size(src, dest):
@@ -19,12 +20,15 @@ def check_update(src, dest):
 
 
 def check_sum(src, dest):
-    md5_src = hashlib.md5(src).hexdigest()
-    md5_dst = hashlib.md5(dst).hexdigest()
-    return md5_src == md5_dst
+    md5_src = hashlib.md5(src.encode()).hexdigest()
+    md5_dest = hashlib.md5(dest.encode()).hexdigest()
+    return md5_src == md5_dest
 
 
 def symlink(src, dest):
+    '''
+    copy symlinks as symlinks
+    '''
     if os.path.exists(dest) and not os.path.isdir(dest):
         os.unlink(dest)
     if os.path.isdir(dest):
@@ -34,6 +38,9 @@ def symlink(src, dest):
 
 
 def hardlink(src, dest):
+    '''
+    preserve hard links
+    '''
     if os.path.exists(dest) and not os.path.isdir(dest):
         os.unlink(dest)
     if os.path.isdir(dest):
@@ -43,6 +50,9 @@ def hardlink(src, dest):
 
 
 def handling_error(source):
+    '''
+    catch error
+    '''
     try:
         f = os.open(source, os.O_RDONLY)
     except FileNotFoundError:
@@ -59,6 +69,9 @@ def handling_error(source):
 
 
 def copy(source, destination):
+    '''
+    Rewrite content
+    '''
     f_source = os.open(source, os.O_RDONLY)
     f_dest = os.open(destination, os.O_CREAT | os.O_WRONLY)
     source_content = os.read(f_source, os.path.getsize(source))
@@ -69,11 +82,17 @@ def copy(source, destination):
 
 
 def update_content(source, destination):
+    '''
+    only copy the parts that are different
+    between the source file and the destination file
+    '''
+    # open and read content of 2 file
     file1 = os.open(source, os.O_RDONLY)
     src_content = os.read(file1, os.path.getsize(source))
     file2 = os.open(destination, os.O_RDWR | os.O_CREAT)
     dest_content = os.read(file2, os.path.getsize(destination))
     count = 0
+    # rewrite the parts that are different
     while count < os.path.getsize(source):
         os.lseek(file1, count, 0)
         os.lseek(file2, count, 0)
@@ -83,15 +102,67 @@ def update_content(source, destination):
         else:
             os.write(file2, os.read(file1, 1))
         count += 1
-    os.close(f_dest)
-    os.close(f_source)
+
+    os.close(file1)
+    os.close(file2)
     set_default(source, destination)
 
 
 def set_default(source, destination):
+    '''
+    Set mod time and permission for the destination file1
+    '''
     f_source_stat = os.stat(source)
     os.utime(destination, (f_source_stat.st_atime, f_source_stat.st_mtime))
     os.chmod(destination, f_source_stat.st_mode)
+
+
+def recursive(item, dest):
+    # path = []
+    # for root, dirs, files in os.walk(".", topdown = True):
+    #    for name in files:
+    #       path.append(os.path.join(root, name))
+    #    for name in dirs:
+    #       path.append(os.path.join(root, name))
+    for element in list:
+        if os.path.isdir(element):
+            os.mkdir(dest + '/' + element)
+            recursive(element, dest + '/' + element)
+        else:
+            main(item, dest)
+
+
+def main(item, dest):
+    '''
+    handle main
+    '''
+    if os.stat(item).st_nlink > 1:  # check hard link
+        hardlink(item, dest)
+
+    elif os.path.islink(item):  # check sym link
+        symlink(item, dest)
+
+    elif os.path.isdir(dest):  # if the destination is directory
+        copy(item, dest + '/' + item.split('/')[-1])
+
+    elif args.checksum:  # -c option
+        if check_sum(item, dest):
+            copy(item, dest)
+
+    elif args.update:  # -u option
+        if check_update(item, dest):
+            copy(item, dest)
+
+    elif os.path.exists(dest):  # rewrite all or rewrite the parts different
+        if not check_size(item, dest) or \
+           not check_time(item, dest):
+            if os.path.getsize(item) >= os.path.getsize(dest):
+                update_content(item, dest)
+            else:
+                os.unlink(dest)
+                copy(item, dest)
+    else:
+        copy(item, dest)
 
 
 if __name__ == '__main__':
@@ -110,38 +181,14 @@ if __name__ == '__main__':
     parser.add_argument("destination", help='file destination')
     args = parser.parse_args()
     #  create directory if it not exist
-    if args.recursive and not check_exist(args.destination):
+    if args.recursive and not os.path.exists(args.destination):
         os.mkdir(args.destination)
 
     for item in args.source:
-        #  check sym link and hard link
         if handling_error(item):
             break
 
-        if os.stat(item).st_nlink > 1:  # check hard link
-            hardlink(item, args.destination)
-
-        elif os.path.islink(item):  # check sym link
-            symlink(item, args.destination)
-
-        elif os.path.isdir(args.destination):
-            copy(item, args.destination + '/' + item.split('/')[-1])
-
-        elif args.checksum:
-            if check_sum(item, args.destination):
-                copy(item, args.destination)
-
-        elif args.update:
-            if check_update(item, args.destination):
-                copy(item, args.destination)
-
-        elif os.path.exists(args.destination):
-            if not check_size(item, args.destination) or \
-               not check_time(item, args.destination):
-                if os.path.getsize(item) >= os.path.getsize(args.destination):
-                    update_content(item, args.destination)
-                else:
-                    os.unlink(args.destination)
-                    copy(item, args.destination)
+        if args.recursive and os.path.isdir(item):
+            recursive(item, args.destination)
         else:
-            copy(item, args.destination)
+            main(item, args.destination)
