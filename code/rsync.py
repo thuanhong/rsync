@@ -83,7 +83,7 @@ def copy(source, destination):
 
 def update_content(source, destination):
     '''
-    only copy the parts that are different
+    Only copy the parts that are different
     between the source file and the destination file
     '''
     # open and read content of 2 file
@@ -118,24 +118,29 @@ def set_default(source, destination):
 
 
 def recursive(item, dest):
-    # path = []
-    # for root, dirs, files in os.walk(".", topdown = True):
-    #    for name in files:
-    #       path.append(os.path.join(root, name))
-    #    for name in dirs:
-    #       path.append(os.path.join(root, name))
+    '''
+    Handle recursive
+    '''
+    list = os.listdir(item)
     for element in list:
-        if os.path.isdir(element):
-            os.mkdir(dest + '/' + element)
-            recursive(element, dest + '/' + element)
+        if os.path.isdir(item + '/' + element):
+            try:
+                os.mkdir(dest + '/' + element)
+            except FileExistsError:
+                pass
+            recursive(item + '/' + element, dest + '/' + element)
         else:
-            main(item, dest)
+            main(item + '/' + element, dest)
 
 
 def main(item, dest):
     '''
-    handle main
+    Handle main
     '''
+    if handling_error(item) or handling_error(dest) or\
+       handling_error(dest + '/' + item.split('/')[-1]):
+        return
+
     if os.stat(item).st_nlink > 1:  # check hard link
         hardlink(item, dest)
 
@@ -165,6 +170,17 @@ def main(item, dest):
         copy(item, dest)
 
 
+def execute_recursive(item, dest):
+    if item[-1] != '/':
+        try:
+            os.mkdir(dest + '/' + item)
+        except FileExistsError:
+            pass
+        recursive(item, dest + '/' + item)
+    else:
+        recursive(item, dest)
+
+
 if __name__ == '__main__':
 
     parser = argparse.ArgumentParser()
@@ -180,15 +196,15 @@ if __name__ == '__main__':
     parser.add_argument("source", nargs="+", help="file source")
     parser.add_argument("destination", help='file destination')
     args = parser.parse_args()
-    #  create directory if it not exist
+    # create directory if it not exist
     if args.recursive and not os.path.exists(args.destination):
         os.mkdir(args.destination)
 
     for item in args.source:
         if handling_error(item):
-            break
+            continue
 
         if args.recursive and os.path.isdir(item):
-            recursive(item, args.destination)
+            execute_recursive(item, args.destination)
         else:
             main(item, args.destination)
