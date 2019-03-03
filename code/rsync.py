@@ -73,11 +73,7 @@ def copy(source, destination):
     Rewrite content
     '''
     f_source = os.open(source, os.O_RDONLY)
-    try:
-        f_dest = os.open(destination, os.O_CREAT | os.O_WRONLY)
-    except PermissionError:
-        os.chmod(destination, 0o777)
-        f_dest = os.open(destination, os.O_CREAT | os.O_WRONLY)
+    f_dest = os.open(destination, os.O_CREAT | os.O_WRONLY)
     source_content = os.read(f_source, os.path.getsize(source))
     os.write(f_dest, source_content)
     os.close(f_dest)
@@ -148,7 +144,12 @@ def main(item, dest):
         symlink(item, dest)
 
     elif os.path.isdir(dest):  # if the destination is directory
-        copy(item, dest + '/' + item.split('/')[-1])
+        try:
+            os.open(dest, os.O_RDONLY)
+        except PermissionError:
+            pass
+        else:
+            copy(item, dest + '/' + item.split('/')[-1])
 
     elif args.checksum:  # -c option
         if check_sum(item, dest):
